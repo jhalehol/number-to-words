@@ -44,7 +44,7 @@ public class NumberDefinition {
         put(6, "sixty");
         put(7, "seventy");
         put(8, "eighty");
-        put(10, "ninety");
+        put(9, "ninety");
     }};
 
     public static final Map<Integer, String> UNITS_DEFINITION = new HashMap<Integer, String>() {{
