@@ -3,84 +3,90 @@ package com.jholguin.converter.service;
 import com.jholguin.converter.dto.NumberGroupStepDto;
 import com.jholguin.converter.exception.ConversionException;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.text.DecimalFormat;
-import java.util.Arrays;
-import java.util.List;
 
-import static com.jholguin.converter.common.NumberUnitGroups.BILLION;
-import static com.jholguin.converter.common.NumberUnitGroups.HUNDRED;
+import static com.jholguin.converter.common.NumberDefinition.BASIC_NUMBERS;
+import static com.jholguin.converter.common.NumberDefinition.BILLION_UNIT_GROUP;
+import static com.jholguin.converter.common.NumberDefinition.HUNDRED_UNIT_GROUP;
+import static com.jholguin.converter.common.NumberDefinition.TENS_NUMBERS;
+import static com.jholguin.converter.common.NumberDefinition.UNITS_DEFINITION;
 
 @Component
 public class ConverterService {
 
-    private Logger logger = LoggerFactory.getLogger(ConverterService.class);
-
     private static final String MAX_NUMBER_DIGITS_FORMAT = "#000000000000";
     private static final int GROUP_LENGTH = 3;
 
-    private static List<String> basic_numbers = Arrays.asList(
-            "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
-            "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"
-    );
-
-    private static List<String> tensUpper = Arrays.asList(
-            "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"
-    );
-
+    /**
+     * Convert a given number into the representation of the number in words in English
+     * @param input Given number to convert, max/min values allowed by integers
+     * @return The number in the string representation
+     * @throws ConversionException Throws an exception if something fail in the number conversion
+     */
     public String convertNumberToString(String input) throws ConversionException {
         final int number = validateInput(input);
+        // Format the number string in the max number of digits expected for the conversion
+        // to divide it into groups of three
         final DecimalFormat maxDigitsFormat = new DecimalFormat(MAX_NUMBER_DIGITS_FORMAT);
         final String formattedNumber = maxDigitsFormat.format(number);
 
-        logger.debug(String.format("Starting to convert %s", input));
-        final int billionGroupIndex = BILLION.getValue();
-        final int hundredGroupIndex = HUNDRED.getValue();
-        int currentIndex = 0;
+        return StringUtils.normalizeSpace(processNumberGroups(formattedNumber));
+    }
+
+    private String processNumberGroups(final String formattedNumber) throws ConversionException {
+        int nextGroupIndex = 0;
         final StringBuilder completeNumberWords = new StringBuilder();
-        for (int groupIndex = billionGroupIndex; groupIndex >= hundredGroupIndex; groupIndex--) {
-            final String groupNumber = formattedNumber.substring(currentIndex, currentIndex + GROUP_LENGTH);
+        // Process each group of number of three to gets the word representation, according to the
+        // their number unit
+        for (int groupIndex = BILLION_UNIT_GROUP; groupIndex >= HUNDRED_UNIT_GROUP; groupIndex--) {
+            final String groupNumber = formattedNumber.substring(nextGroupIndex, nextGroupIndex + GROUP_LENGTH);
             final NumberGroupStepDto groupNumberStep = new NumberGroupStepDto(groupNumber);
-            if (groupNumberStep.getNumber() > 0 || groupIndex == hundredGroupIndex) {
-                final String groupWord = getHundredNumberWord(groupNumberStep);
-                final String unitsWord = groupIndex == 1 ? "" : " " + HUNDRED.nameFromGroup(groupIndex) + " ";
+            // Only process group numbers if they are greater than zero or is the last group
+            if (groupNumberStep.getNumber() > 0 || groupIndex == HUNDRED_UNIT_GROUP) {
+                final String groupWord = getGroupNumberWord(groupNumberStep);
+                final String unitsWord = groupIndex == HUNDRED_UNIT_GROUP ?
+                        "" : " " + UNITS_DEFINITION.get(groupIndex) + " ";
 
                 completeNumberWords.append(groupWord)
                         .append(unitsWord);
             }
 
-            currentIndex += GROUP_LENGTH;
+            nextGroupIndex += GROUP_LENGTH;
         }
 
         return StringUtils.normalizeSpace(completeNumberWords.toString());
     }
 
-    public String getHundredNumberWord(NumberGroupStepDto groupNumber) throws ConversionException {
+    private String getGroupNumberWord(NumberGroupStepDto groupNumber) throws ConversionException {
         final int number = groupNumber.getNumber();
-        final StringBuilder numberWords = new StringBuilder();
-        if (number < 20) {
-            final String numberWord = basic_numbers.get(number);
-            numberWords.append(numberWord);
+        if (number < 20) { // Basic numbers defined in the word dictionary
+            return BASIC_NUMBERS.get(number);
         } else if (number < 100) {
-            final int firstDigit = groupNumber.getSecondDigit();
-            final int secondDigit = groupNumber.getThirdDigit();
-            final String firstWord = tensUpper.get(firstDigit - 2);
-            final String secondWord = secondDigit == 0 ? "" : "-" + basic_numbers.get(secondDigit);
-            numberWords.append(firstWord).append(secondWord);
+            return getTenNumberWord(groupNumber);
         } else {
-            final int firstDigit = groupNumber.getFirstDigit();
-            final String firstWord = basic_numbers.get(firstDigit) + " " + HUNDRED.getName();
-            final String remainingNumber = groupNumber.getTenPart();
-            final NumberGroupStepDto tensGroupNumber = new NumberGroupStepDto(remainingNumber);
-            final String secondWord = tensGroupNumber.getNumber() == 0 ? "" : " " + getHundredNumberWord(tensGroupNumber);
-
-            numberWords.append(firstWord).append(secondWord);
+            return getHundredWord(groupNumber);
         }
+    }
 
-        return numberWords.toString();
+    public String getTenNumberWord(NumberGroupStepDto groupNumber) {
+        final int firstDigit = groupNumber.getSecondDigit();
+        final int secondDigit = groupNumber.getThirdDigit();
+        final String firstWord = TENS_NUMBERS.get(firstDigit);
+        final String secondWord = secondDigit == 0 ? "" : "-" + BASIC_NUMBERS.get(secondDigit);
+
+        return firstWord + secondWord;
+    }
+
+    public String getHundredWord(NumberGroupStepDto groupNumber) throws ConversionException {
+        final int firstDigit = groupNumber.getFirstDigit();
+        final String firstWord = BASIC_NUMBERS.get(firstDigit) + " " + UNITS_DEFINITION.get(HUNDRED_UNIT_GROUP);
+        final String remainingNumber = groupNumber.getTenPart();
+        final NumberGroupStepDto tensGroupNumber = new NumberGroupStepDto(remainingNumber);
+        final String secondWord = tensGroupNumber.getNumber() == 0 ? "" : " " + getTenNumberWord(tensGroupNumber);
+
+        return firstWord + secondWord;
     }
 
     private static int validateInput(final String input) throws ConversionException {
