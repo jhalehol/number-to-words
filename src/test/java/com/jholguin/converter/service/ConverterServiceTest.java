@@ -102,13 +102,14 @@ public class ConverterServiceTest {
     @Test
     public void givenHundredThousandNumberWhenConvertToWordThenReturnWord() throws Exception {
         // Act
+        final String result0 = service.convertNumberToString("983100");
         final String result1 = service.convertNumberToString("125555");
         final String result2 = service.convertNumberToString("300986");
         final String result3 = service.convertNumberToString("888888");
         final String result4 = service.convertNumberToString("933100");
 
-
         // Assert
+        errorCollector.checkThat(result0, equalTo("nine hundred eighty-three thousand one hundred"));
         errorCollector.checkThat(result1, equalTo("one hundred twenty-five thousand five hundred fifty-five"));
         errorCollector.checkThat(result2, equalTo("three hundred thousand nine hundred eighty-six"));
         errorCollector.checkThat(result3, equalTo("eight hundred eighty-eight thousand eight hundred eighty-eight"));
@@ -119,14 +120,30 @@ public class ConverterServiceTest {
     @Test
     public void givenMillionNumberWhenConvertToWordThenReturnWord() throws Exception {
         // Act
+        final String result0 = service.convertNumberToString("98923100");
         final String result1 = service.convertNumberToString("2455666");
         final String result2 = service.convertNumberToString("34766122");
         final String result3 = service.convertNumberToString("786333876");
 
         // Assert
+        errorCollector.checkThat(result0, equalTo("ninety-eight million nine hundred twenty-three thousand one hundred"));
+        errorCollector.checkThat(result1, equalTo("two million four hundred fifty-five thousand six hundred sixty-six"));
         errorCollector.checkThat(result1, equalTo("two million four hundred fifty-five thousand six hundred sixty-six"));
         errorCollector.checkThat(result2, equalTo("thirty-four million seven hundred sixty-six thousand one hundred twenty-two"));
         errorCollector.checkThat(result3, equalTo("seven hundred eighty-six million three hundred thirty-three thousand eight hundred seventy-six"));
+    }
+
+    @Test
+    public void givenNegativeNumbersWhenConvertToWordThenReturnWord() throws Exception {
+        // Act
+        final String result1 = service.convertNumberToString("-2455321");
+        final String result2 = service.convertNumberToString("-3");
+        final String result3 = service.convertNumberToString("-234");
+
+        // Assert
+        errorCollector.checkThat(result1, equalTo("(negative) two million four hundred fifty-five thousand three hundred twenty-one"));
+        errorCollector.checkThat(result2, equalTo("(negative) three"));
+        errorCollector.checkThat(result3, equalTo("(negative) two hundred thirty-four"));
     }
 
     @Test

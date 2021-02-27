@@ -12,12 +12,15 @@ import static com.jholguin.converter.common.NumberDefinition.BILLION_UNIT_GROUP;
 import static com.jholguin.converter.common.NumberDefinition.HUNDRED_UNIT_GROUP;
 import static com.jholguin.converter.common.NumberDefinition.TENS_NUMBERS;
 import static com.jholguin.converter.common.NumberDefinition.UNITS_DEFINITION;
+import static java.lang.Math.abs;
 
 @Component
 public class ConverterService {
 
     private static final String MAX_NUMBER_DIGITS_FORMAT = "#000000000000";
     private static final int GROUP_LENGTH = 3;
+    private static final String NEGATIVE_SYMBOL = "-";
+    private static final String NEGATIVE_WORD = "(negative) ";
 
     /**
      * Convert a given number into the representation of the number in words in English
@@ -31,8 +34,11 @@ public class ConverterService {
         // to divide it into groups of three
         final DecimalFormat maxDigitsFormat = new DecimalFormat(MAX_NUMBER_DIGITS_FORMAT);
         final String formattedNumber = maxDigitsFormat.format(number);
+        final String numberWords = StringUtils.normalizeSpace(processNumberGroups(formattedNumber));
+        final boolean isNegative = input.contains(NEGATIVE_SYMBOL);
+        final String negativeWord = isNegative ? NEGATIVE_WORD : "";
 
-        return StringUtils.normalizeSpace(processNumberGroups(formattedNumber));
+        return negativeWord + numberWords;
     }
 
     private String processNumberGroups(final String formattedNumber) throws ConversionException {
@@ -100,7 +106,7 @@ public class ConverterService {
                 throw new ConversionException("Provided number is not in the range of Integers");
             }
 
-            return Integer.parseInt(input);
+            return abs(Integer.parseInt(input));
         } catch (NumberFormatException ex) {
             throw new ConversionException(String.format("Input <%s> is not a valid number", input));
         }
