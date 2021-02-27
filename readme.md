@@ -18,13 +18,19 @@ When the program be running the following commands are available
 * `convert`: Convert the given number into words, you can specify next to the command the number that you want to
 convert or specify the parameter `--number` examples:
 
-    ** `convert 123` or `convert --number 123` in both cases the output will be `one hundred and twenty-three`
+    ** `convert 123`
+    ** `convert --number 123`
+    
+in both cases the output will be `one hundred and twenty-three`
 
 * `exit` Close the application
 
 #### Docker
 
-To build a docker image you can run `./docker_build.sh` and to run the docker image you can run `docker run -it --rm converter`, 
-when you require to stop the execution you can press `Control-P` and then `Control-Q`
+Some docker commands provided to build and run the application from a docker image:
+
+* Build image: `./docker_build.sh` 
+* Run image `docker run -it --rm converter`
+* Stop the image press `Control-P` and then `Control-Q`
 
 
